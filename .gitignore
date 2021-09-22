@@ -1,0 +1,7 @@
+.vagrant
+token
+server
+kubeconfig
+config
+
+.idea/
