@@ -1,10 +1,22 @@
 Vagrant.configure(2) do |config|
-    config.vm.network "private_network", bridge: "Default Switch"
+    config.vagrant.plugins = ["vagrant-libvirt"]
+
+    config.vm.provider :hyperv do |config|
+        config.vm.network "private_network", bridge: "Default Switch"
+    end
+
+
     config.vm.synced_folder ".", "/vagrant", :disabled => true
 
     config.vm.define :etcd do |etcd|
       etcd.vm.host_name = "etcd"
-      etcd.vm.box = "hashicorp/bionic64"
+      etcd.vm.box = "generic/ubuntu1804"
+
+      etcd.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
 
       etcd.vm.provider :virtualbox do |vb|
         vb.memory = 4096
@@ -20,7 +32,13 @@ Vagrant.configure(2) do |config|
 
     config.vm.define :controlplane do |controlplane|
       controlplane.vm.host_name = "controlplane"
-      controlplane.vm.box = "hashicorp/bionic64"
+      controlplane.vm.box = "generic/ubuntu1804"
+
+      controlplane.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
 
       controlplane.vm.provider :virtualbox do |vb|
         vb.memory = 4096
@@ -36,7 +54,13 @@ Vagrant.configure(2) do |config|
 
     config.vm.define :worker do |worker|
       worker.vm.host_name = "worker"
-      worker.vm.box = "hashicorp/bionic64"
+      worker.vm.box = "generic/ubuntu1804"
+
+      worker.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
 
       worker.vm.provider :virtualbox do |vb|
         vb.memory = 4096
@@ -52,7 +76,13 @@ Vagrant.configure(2) do |config|
 
     config.vm.define :winworker do |winworker|
       winworker.vm.host_name = "winworker"
-      winworker.vm.box = "StefanScherer/windows_2019_docker"
+      winworker.vm.box = "jborean93/WindowsServer2019"
+
+       winworker.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
 
       winworker.vm.provider :virtualbox do |vb|
         vb.memory = 4096
@@ -74,7 +104,13 @@ Vagrant.configure(2) do |config|
 
     config.vm.define :rancher do |rancher|
       rancher.vm.host_name = "rancher"
-      rancher.vm.box = "hashicorp/bionic64"
+      rancher.vm.box = "generic/ubuntu1804"
+
+      rancher.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
 
       rancher.vm.provider :virtualbox do |vb|
         vb.memory = 4096
@@ -89,7 +125,6 @@ Vagrant.configure(2) do |config|
 
       rancher.vm.provision :shell, privileged: true, inline: "apt-get update && apt-get install build-essential -y"
       rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
-      rancher.vm.provision :shell, privileged: true, inline: "snap install go --classic"
       rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
       rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:latest"
 
