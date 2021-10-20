@@ -79,7 +79,7 @@ Vagrant.configure(2) do |config|
       winworker.vm.box = "jborean93/WindowsServer2019"
 
        winworker.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 4096
+        libvirt.memory = 8192
         libvirt.cpus = 2
         libvirt.disk_driver :cache => 'none'
       end
