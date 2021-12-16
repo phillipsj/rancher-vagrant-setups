@@ -96,10 +96,30 @@ Vagrant.configure(2) do |config|
         hv.cpus = 2
         override.vm.boot_timeout = 600
       end
+    end
 
-      winworker.vm.provision :shell, privileged: true, inline: "Stop-Service docker"
-      winworker.vm.provision :shell, privileged: true, inline: "Set-MpPreference -DisableRealtimeMonitoring $true -DisableScriptScanning $true -DisableArchiveScanning $true -ExclusionPath c:\\var\\lib\\rancher\\rke2\\bin,c:\\usr\\local\\bin"
-      winworker.vm.provision :shell, privileged: true, inline: "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False"
+    config.vm.define :winworker22 do |winworker22|
+      winworker22.vm.host_name = "winworker22"
+      winworker22.vm.box = "jborean93/WindowsServer2022"
+
+      winworker22.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 8192
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+
+      winworker22.vm.provider :virtualbox do |vb|
+        vb.memory = 4096
+        vb.cpus = 2
+        vb.gui = true
+      end
+
+      winworker22.vm.provider :hyperv do |hv, override|
+        hv.linked_clone = true
+        hv.memory = 4096
+        hv.cpus = 2
+        override.vm.boot_timeout = 600
+      end
     end
 
     config.vm.define :rancher do |rancher|
@@ -126,7 +146,7 @@ Vagrant.configure(2) do |config|
       rancher.vm.provision :shell, privileged: true, inline: "apt-get update && apt-get install build-essential -y"
       rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
       rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
-      rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:latest"
+      rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:v2.6-head"
 
     end
 

@@ -3,7 +3,7 @@ Set-MpPreference -DisableRealtimeMonitoring $true -DisableScriptScanning $true -
 Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
 
 Write-Host "Downloading RKE2 installer for Windows..."
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/phillipsj/rke2/bugfix/powershell-strict-mode-corrections/install.ps1 -Outfile install.ps1
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/phillipsj/rke2/bugfix/windows-installer/install.ps1 -Outfile install.ps1
 
 Write-Host "Creating RKE2 configuration..."
 $token = Get-Content C:/sync/token

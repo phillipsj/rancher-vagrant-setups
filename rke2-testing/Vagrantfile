@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
         hv.cpus = 2
       end
 
-      main.vm.synced_folder "./sync", "/var/sync", smb_username: ENV['SMB_USERNAME'], smb_password: ENV['SMB_PASSWORD']
+      main.vm.synced_folder "./sync", "/var/sync"
      
       main.vm.provision :shell, privileged: true, path: "main.sh"
     end
@@ -51,7 +51,7 @@ Vagrant.configure(2) do |config|
         override.vm.boot_timeout = 600
       end
      
-      winworker.vm.synced_folder "./sync", "C:/sync", smb_username: ENV['SMB_USERNAME'], smb_password: ENV['SMB_PASSWORD']
+      winworker.vm.synced_folder "./sync", "C:/sync"
       winworker.vm.provision :shell, privileged: true, path: "winworker.ps1"
     end
     
