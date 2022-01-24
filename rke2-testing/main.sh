@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL="testing" sh -
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL="stable" sh -
 
 echo "[INFO] Setting up environment variables...."
 touch /etc/profile.d/rancher.sh
@@ -22,7 +22,7 @@ crictl config --set runtime-endpoint=unix:///run/k3s/containerd/containerd.sock
 chmod a=r /etc/rancher/rke2/rke2.yaml
 
 echo "[INFO] Waiting for Calico to be ready...."
-curl -o /usr/local/bin/calicoctl -sOL https://github.com/projectcalico/calicoctl/releases/download/v3.19.0/calicoctl
+curl -o /usr/local/bin/calicoctl -sOL https://github.com/projectcalico/calicoctl/releases/download/v3.19.2/calicoctl
 chmod +x /usr/local/bin/calicoctl
 until calicoctl get felixConfiguration default | grep -q "default" > /dev/null 2>&1; do sleep 2; echo "Waiting...."; done;
 calicoctl ipam configure --strictaffinity=true

@@ -93,7 +93,16 @@ Vagrant.configure(2) do |config|
         override.vm.boot_timeout = 600
       end
 
+      winworker.vm.provision :shell, privileged: true, inline: "Write-Host 'Installing Containers Feature...'"
       winworker.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+      winworker.vm.provision :shell, privileged: true, inline: "Write-Host 'Adding NuGet Package provider...'"
+      winworker.vm.provision :shell, privileged: true, inline: "Get-PackageProvider -Name NuGet -Force"
+      winworker.vm.provision :shell, privileged: true, inline: "Write-Host 'Installing Windows Update Module...'"
+      winworker.vm.provision :shell, privileged: true, inline: "Install-Module -Name PSWindowsUpdate -Scope AllUsers -AllowClobber -Confirm:$false -Force"
+      winworker.vm.provision :shell, privileged: true, inline: "Write-Host 'Getting Windows Updates...'"
+      winworker.vm.provision :shell, privileged: true, inline: "Get-WindowsUpdate"
+      winworker.vm.provision :shell, privileged: true, inline: "Write-Host 'Installing Windows Updates...'"
+      winworker.vm.provision :shell, privileged: true, inline: "Install-WindowsUpdate"
     end
 
     config.vm.define :winworker22 do |winworker22|
