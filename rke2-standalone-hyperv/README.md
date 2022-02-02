@@ -6,7 +6,7 @@ You need to have the following installed on Windows 10 or 11.
 2. Vagrant, I recommend you install using [Chocolatey](https://community.chocolatey.org/packages/vagrant)
 3. Create a local user using [lusrmgr](lusrmgr.msc)
 4. The local user should be member of **Administrators**, and the **Hyper-V Administrators** group
-5. Assign the user to **rancher-vagrant-setups** folder
+5. Assign the user to **rancher-vagrant-setups** folder with full control permissions
 
 # Running 
 
