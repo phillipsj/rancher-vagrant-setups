@@ -1,0 +1,24 @@
+
+Vagrant.configure(2) do |config|
+    config.vagrant.plugins = ["vagrant-reload"]
+
+    config.vm.network "private_network", bridge: "Default Switch"
+    config.vm.synced_folder ".", "/vagrant", :disabled => true
+
+    config.vm.define :squid do |squid|
+      worker.vm.host_name = "squid"
+      worker.vm.box = "hashicorp/bionic64"
+
+      worker.vm.provider :hyperv do |hv|
+        hv.linked_clone = true
+        hv.memory = 4096
+        hv.cpus = 2
+        hv.maxmemory = 4096
+      end
+
+      squid.vm.provision :shell, privileged: true, inline: "snap install docker"
+      squid.vm.provision :file, source: "squid.conf", destination: "/home/vagrant/squid/squid.conf"
+      squid.vm.provision :shell, privileged: true, inline: "docker run -d -v /home/vagrant/squid/squid.conf:/etc/squid/squid.conf -p 3128:3128 wernight/squid"
+    end
+
+  end

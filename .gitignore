@@ -1,4 +1,4 @@
-.vagrant
+.vagrant/
 token
 server
 kubeconfig
