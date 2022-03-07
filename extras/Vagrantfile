@@ -9,7 +9,7 @@ Vagrant.configure(2) do |config|
       squid.vm.host_name = "squid"
       squid.vm.box = "hashicorp/bionic64"
 
-      squid.vm.provider :hyperv do |hv|
+      squida.vm.provider :hyperv do |hv|
         hv.linked_clone = true
         hv.memory = 4096
         hv.cpus = 2
