@@ -70,8 +70,20 @@ Vagrant.configure(2) do |config|
       winworker22.vm.provision :reload
     end
 
+    config.vm.define :rkewin do |rkewin|
+      rkewin.vm.host_name = "rkewin"
+      rkewin.vm.box = "StefanScherer/windows_2019_docker"
+
+      rkewin.vm.provider :hyperv do |hv, override|
+        hv.linked_clone = true
+        hv.memory = 4096
+        hv.cpus = 2
+        override.vm.boot_timeout = 600
+      end
+    end
+
     config.vm.define :rancher do |rancher|
-      rancher.vm.host_name = "rancherv"
+      rancher.vm.host_name = "rancher"
       rancher.vm.box = "hashicorp/bionic64"
 
       rancher.vm.provider :hyperv do |hv|
@@ -82,7 +94,7 @@ Vagrant.configure(2) do |config|
 
       rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
       rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
-      rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:v2.6-head"
+      rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:v2.6.3"
 
     end
 

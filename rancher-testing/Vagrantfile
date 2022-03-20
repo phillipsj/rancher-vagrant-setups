@@ -1,171 +1,110 @@
 Vagrant.configure(2) do |config|
-    config.vagrant.plugins = ["vagrant-libvirt"]
+  config.vagrant.plugins = ["vagrant-reload"]
 
-    #config.vm.network "private_network", bridge: "Default Switch"
-    config.vm.synced_folder ".", "/vagrant", :disabled => true
+  config.vm.network "private_network", bridge: "Default Switch"
+  config.vm.synced_folder ".", "/vagrant", :disabled => true
 
-    config.vm.define :etcd do |etcd|
-      etcd.vm.host_name = "etcd"
-      etcd.vm.box = "generic/ubuntu1804"
+  config.vm.define :etcd do |etcd|
+    etcd.vm.host_name = "etcd"
+    etcd.vm.box = "hashicorp/bionic64"
 
-      etcd.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 4096
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
+    etcd.vm.provider :hyperv do |hv|
+      hv.memory = 4096
+      hv.cpus = 2
+      hv.linked_clone = true
+      hv.maxmemory = 4096
+    end
+  end
 
-      etcd.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-      end
+  config.vm.define :controlplane do |controlplane|
+    controlplane.vm.host_name = "controlplane"
+    controlplane.vm.box = "hashicorp/bionic64"
 
-      etcd.vm.provider :hyperv do |hv|
-        hv.memory = 4096
-        hv.cpus = 2
-        hv.linked_clone = true
-      end
+    controlplane.vm.provider :hyperv do |hv|
+      hv.linked_clone = true
+      hv.memory = 4096
+      hv.cpus = 2
+      hv.maxmemory = 4096
+    end
+  end
+
+  config.vm.define :worker do |worker|
+    worker.vm.host_name = "worker"
+    worker.vm.box = "hashicorp/bionic64"
+
+    worker.vm.provider :hyperv do |hv|
+      hv.linked_clone = true
+      hv.memory = 4096
+      hv.cpus = 2
+      hv.maxmemory = 4096
+    end
+  end
+
+  config.vm.define :winworker do |winworker|
+    winworker.vm.host_name = "winworker"
+    winworker.vm.box = "jborean93/WindowsServer2019"
+
+    winworker.vm.provider :hyperv do |hv, override|
+      hv.linked_clone = true
+      hv.memory = 4096
+      hv.cpus = 2
+      override.vm.boot_timeout = 600
     end
 
-    config.vm.define :controlplane do |controlplane|
-      controlplane.vm.host_name = "controlplane"
-      controlplane.vm.box = "generic/ubuntu1804"
+    winworker.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+    winworker.vm.provision :reload
+  end
 
-      controlplane.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 4096
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
+  config.vm.define :winworker22 do |winworker22|
+    winworker22.vm.host_name = "winworker22"
+    winworker22.vm.box = "jborean93/WindowsServer2022"
 
-      controlplane.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-      end
-
-      controlplane.vm.provider :hyperv do |hv|
-        hv.linked_clone = true
-        hv.memory = 4096
-        hv.cpus = 2
-      end
+    winworker22.vm.provider :hyperv do |hv, override|
+      hv.linked_clone = true
+      hv.memory = 4096
+      hv.cpus = 2
+      override.vm.boot_timeout = 600
     end
 
-    config.vm.define :worker do |worker|
-      worker.vm.host_name = "worker"
-      worker.vm.box = "generic/ubuntu1804"
+    winworker22.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+    winworker22.vm.provision :reload
+  end
 
-      worker.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 4096
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
+  config.vm.define :rancher do |rancher|
+    rancher.vm.host_name = "rancher"
+    rancher.vm.box = "hashicorp/bionic64"
 
-      worker.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-      end
-
-      worker.vm.provider :hyperv do |hv|
-        hv.linked_clone = true
-        hv.memory = 4096
-        hv.cpus = 2
-      end
+    rancher.vm.provider :hyperv do |hv|
+      hv.memory = 8192
+      hv.cpus = 2
+      hv.linked_clone = true
     end
 
-    config.vm.define :winworker do |winworker|
-      winworker.vm.host_name = "winworker"
-      winworker.vm.box = "jborean93/WindowsServer2019"
+    rancher.vm.provision :shell, privileged: true, inline: "apt-get update && apt-get install build-essential -y"
+    rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
+    rancher.vm.provision :shell, privileged: true, inline: "snap install go --channel=1.17/stable --classic"
+    rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
+    rancher.vm.provision :shell, privileged: true, inline: "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash"
+    rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/phillipsj/rancher.git"
 
-      winworker.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 8192
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
+    rancher.vm.provision :shell, privileged: true, inline: "k3d cluster delete rancher"
+    rancher.vm.provision :shell, privileged: true, inline: "k3d cluster create rancher --image=docker.io/rancher/k3s:v1.21.3-k3s1 --api-port=$(hostname -I | awk '{print $1}'):6443"
 
-      winworker.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-        vb.gui = true
-      end
+    rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/rancher/machine.git"
+    rancher.vm.provision :shell, privileged: true, inline: "cd machine && go mod tidy && go build -o rancher-machine cmd/rancher-machine/machine.go"
+    rancher.vm.provision :shell, privileged: true, inline: "cp /home/vagrant/machine/rancher-machine /usr/local/bin/rancher-machine"
 
-      winworker.vm.provider :hyperv do |hv, override|
-        hv.linked_clone = true
-        hv.memory = 4096
-        hv.cpus = 2
-        override.vm.boot_timeout = 600
-      end
+    rancher.vm.provision :shell, privileged: true, inline: "k3d kubeconfig write rancher"
 
-      winworker.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
-    end
+    rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && git checkout bugfix/envvars-registration-command"
+    rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go get"
+    rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go build"
 
-    config.vm.define :winworker22 do |winworker22|
-      winworker22.vm.host_name = "winworker22"
-      winworker22.vm.box = "jborean93/WindowsServer2022"
-
-      winworker22.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 8192
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
-
-      winworker22.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-        vb.gui = true
-      end
-
-      winworker22.vm.provider :hyperv do |hv, override|
-        hv.linked_clone = true
-        hv.memory = 4096
-        hv.cpus = 2
-        override.vm.boot_timeout = 600
-      end
-
-      winworker22.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
-    end
-
-    config.vm.define :rancher do |rancher|
-      rancher.vm.host_name = "rancher"
-      rancher.vm.box = "generic/ubuntu1804"
-
-      rancher.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 4096
-        libvirt.cpus = 2
-        libvirt.disk_driver :cache => 'none'
-      end
-
-      rancher.vm.provider :virtualbox do |vb|
-        vb.memory = 4096
-        vb.cpus = 2
-      end
-
-      rancher.vm.provider :hyperv do |hv|
-        hv.memory = 4096
-        hv.cpus = 2
-        hv.linked_clone = true
-      end
-
-      rancher.vm.provision :shell, privileged: true, inline: "apt-get update && apt-get install build-essential -y"
-      rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
-      rancher.vm.provision :shell, privileged: true, inline: "snap install go --classic"
-      rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
-      rancher.vm.provision :shell, privileged: true, inline: "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash"
-      rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/rancher/rancher.git"
-
-      rancher.vm.provision :shell, privileged: true, inline: "k3d cluster delete rancher"
-      rancher.vm.provision :shell, privileged: true, inline: "k3d cluster create rancher --image=docker.io/rancher/k3s:v1.21.3-k3s1 --api-port=$(hostname -I | awk '{print $1}'):6443"
-
-      rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/rancher/machine.git"
-      rancher.vm.provision :shell, privileged: true, inline: "cd machine && go build -o rancher-machine cmd/rancher-machine/machine.go"
-      rancher.vm.provision :shell, privileged: true, inline: "cp /home/vagrant/machine/rancher-machine /usr/local/bin/rancher-machine"
-
-      rancher.vm.provision :shell, privileged: true, inline: "k3d kubeconfig write rancher"
-
-      rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && git checkout release/v2.6"
-      rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go get"
-      rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go build"
-
-      rancher.vm.provision :shell, privileged: true, inline: "mkdir bin"
-      rancher.vm.provision :shell, privileged: true, inline: "cp /home/vagrant/rancher/rancher /home/vagrant/bin/rancher"
-      rancher.vm.provision :shell, privileged: true, inline: "CATTLE_BOOTSTRAP_PASSWORD=admin CATTLE_DEV_MODE=30 PATH=$PATH:/home/vagrant/bin KUBECONFIG=$HOME/.k3d/kubeconfig-rancher.yaml /home/vagrant/bin/rancher --debug"
-    end
+    rancher.vm.provision :shell, privileged: true, inline: "mkdir bin"
+    rancher.vm.provision :shell, privileged: true, inline: "cp /home/vagrant/rancher/rancher /home/vagrant/bin/rancher"
+    rancher.vm.provision :shell, privileged: true, inline: "CATTLE_BOOTSTRAP_PASSWORD=admin CATTLE_DEV_MODE=30 PATH=$PATH:/home/vagrant/bin KUBECONFIG=$HOME/.k3d/kubeconfig-rancher.yaml /home/vagrant/bin/rancher --debug"
+  
 
   end
+
+end
