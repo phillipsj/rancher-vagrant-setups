@@ -1,0 +1,126 @@
+Vagrant.require_version ">= 2.2.17"
+Vagrant.configure(2) do |config|
+    config.vagrant.plugins = ["vagrant-reload", "vagrant-rke2"]
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+
+    rke2_version = "v1.22.6+rke2r1"
+    server_ip = "10.10.10.100"
+    linux_agent_ip = "10.10.10.101"
+    win_agent_ip = "10.10.10.102"
+    win22_agent_ip = "10.10.10.103"
+
+    config.vm.define :server do |server|
+      server.vm.host_name = "server"
+      server.vm.box = 'generic/ubuntu2004'
+
+      server.vm.network "private_network", ip: server_ip, netmask: "255.255.255.0"
+
+      server.vm.provider :virtualbox do |vb|
+        vb.linked_clone = true
+        vb.memory = 4096
+        vb.cpus = 2
+      end
+
+      server.vm.provision :rke2, run: "once" do |rke2|
+        rke2.env = <<~ENV
+        INSTALL_RKE2_CHANNEL=#{rke2_version}
+        INSTALL_RKE2_TYPE=server
+        ENV
+
+        rke2.config_mode = '0644' # side-step https://github.com/k3s-io/k3s/issues/4321
+        rke2.config = <<~YAML
+          write-kubeconfig-mode: 0644
+          node-external-ip: #{server_ip}
+          token: vagrant-rke2
+          cni: calico
+        YAML
+      end
+    end
+
+    config.vm.define :linuxagent do |linuxagent|
+      linuxagent.vm.host_name = "linuxagent"
+      linuxagent.vm.box = "generic/ubuntu2004"
+
+      linuxagent.vm.network "private_network", ip: linux_agent_ip, netmask: "255.255.255.0"
+
+      linuxagent.vm.provider :virtualbox do |vb|
+        vb.linked_clone = true
+        vb.memory = 4096
+        vb.cpus = 2
+      end
+
+      linuxagent.vm.provision :rke2, run: "once" do |rke2|
+        rke2.env = <<~ENV
+        INSTALL_RKE2_CHANNEL=#{rke2_version}
+        INSTALL_RKE2_TYPE=agent
+        ENV
+
+        rke2.config_mode = '0644' # side-step https://github.com/k3s-io/k3s/issues/4321
+        rke2.config = <<~YAML
+          write-kubeconfig-mode: 0644
+          node-external-ip: #{linux_agent_ip}
+          server: https://#{server_ip}:9345
+          token: vagrant-rke2
+        YAML
+      end
+    end
+
+    config.vm.define :winagent do |winagent|
+      winagent.vm.host_name = "winagent"
+      winagent.vm.box = "jborean93/WindowsServer2019"
+      winagent.vm.provider :virtualbox do |vb|
+        vb.linked_clone = true
+        vb.memory = 4096
+        vb.cpus = 2
+        # FOR WINDOWS GUI
+        vb.gui = true
+        vb.customize ["modifyvm", :id, "--vram", 128]
+        vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+        vb.customize ["modifyvm", :id, "--accelerate3d", "on"]
+        vb.customize ["modifyvm", :id, "--accelerate2dvideo", "on"]
+      end
+
+      winagent.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+      winagent.vm.provision :reload
+      winagent.vm.provision :rke2, run: "once" do |rke2|
+        rke2.env = "-Version #{rke2_version}"
+        rke2.config = <<~YAML
+          kube-proxy-arg: "feature-gates=IPv6DualStack=false"
+          node-external-ip: #{win_agent_ip}
+          node-ip: #{win_agent_ip}
+          server: https://#{server_ip}:9345
+          token: vagrant-rke2
+        YAML
+      end
+    end
+
+    config.vm.define :winagent22 do |winagent22|
+      winagent22.vm.host_name = "winagent22"
+      winagent22.vm.box = "jborean93/WindowsServer2022 "
+      winagent22.vm.provider :virtualbox do |vb|
+        vb.linked_clone = true
+        vb.memory = 4096
+        vb.cpus = 2
+        # FOR WINDOWS GUI
+        vb.gui = true
+        vb.customize ["modifyvm", :id, "--vram", 128]
+        vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+        vb.customize ["modifyvm", :id, "--accelerate3d", "on"]
+        vb.customize ["modifyvm", :id, "--accelerate2dvideo", "on"]
+      end
+
+      winagent22.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+      winagent22.vm.provision :reload
+      winagent22.vm.provision :rke2, run: "once" do |rke2|
+        rke2.env = "-Version #{rke2_version}"
+
+        rke2.config = <<~YAML
+          kube-proxy-arg: "feature-gates=IPv6DualStack=false"
+          node-external-ip: #{win22_agent_ip}
+          node-ip: #{win22_agent_ip}
+          server: https://#{server_ip}:9345
+          token: vagrant-rke2
+        YAML
+      end
+    end
+end

@@ -10,13 +10,13 @@ You need to have the following installed on Windows 10 or 11.
 
 # Running 
 
-Vagrant requires that you are using an admin prompt, I recommend PowerShell running with Windows Terminal. There is one controlplane node called `server`, and one Linux node called `linuxagent`. You can now choose to boot just a Windows 2019 node called `winagent` or a Windows 2022 node called `winagent22`. I typically just boot a three node system like so:
+Vagrant requires that you are using an admin prompt, I recommend PowerShell running with Windows Terminal. There is one controlplane node called `main`, and one Linux node called `linuxworker`. You can now choose to boot just a Windows 2019 node called `winworker` or a Windows 2022 node called `winworker22`. I typically just boot a three node system like so:
 
 ```Bash
-vagrant up server linuxagent winagent --provider hyperv
+vagrant up main linuxworker winworker --provider hyperv
 ```
 
-Once it all boots, ssh into `server` and test that your nodes are all ready. 
+Once it all boots, ssh into `main` and test that your nodes are all ready. 
 
 ```Bash
 vagrant ssh main
