@@ -88,7 +88,7 @@ Vagrant.configure(2) do |config|
     rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/phillipsj/rancher.git"
 
     rancher.vm.provision :shell, privileged: true, inline: "k3d cluster delete rancher"
-    rancher.vm.provision :shell, privileged: true, inline: "k3d cluster create rancher --image=docker.io/rancher/k3s:v1.21.3-k3s1 --api-port=$(hostname -I | awk '{print $1}'):6443"
+    rancher.vm.provision :shell, privileged: true, inline: "k3d cluster create rancher --image=docker.io/rancher/k3s:v1.23.3-k3s1 --api-port=$(hostname -I | awk '{print $1}'):6443"
 
     rancher.vm.provision :shell, privileged: true, inline: "git clone https://github.com/rancher/machine.git"
     rancher.vm.provision :shell, privileged: true, inline: "cd machine && go mod tidy && go build -o rancher-machine cmd/rancher-machine/machine.go"
@@ -96,7 +96,7 @@ Vagrant.configure(2) do |config|
 
     rancher.vm.provision :shell, privileged: true, inline: "k3d kubeconfig write rancher"
 
-    rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && git checkout bugfix/envvars-registration-command"
+    rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && git checkout bugfix/etcd-restore-plans"
     rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go get"
     rancher.vm.provision :shell, privileged: true, inline: "cd /home/vagrant/rancher && go build"
 
