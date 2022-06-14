@@ -1,0 +1,83 @@
+Vagrant.configure(2) do |config|
+    config.vagrant.plugins = ["vagrant-reload", "vagrant-libvirt"]
+
+    config.vm.synced_folder ".", "/vagrant", :disabled => true
+
+    config.vm.define :etcd do |etcd|
+      etcd.vm.host_name = "etcd"
+      etcd.vm.box = "generic/ubuntu1804"
+
+      etcd.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+    end
+
+    config.vm.define :controlplane do |controlplane|
+      controlplane.vm.host_name = "controlplane"
+      controlplane.vm.box = "generic/ubuntu1804"
+
+      controlplane.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+    end
+
+    config.vm.define :worker do |worker|
+      worker.vm.host_name = "worker"
+      worker.vm.box = "generic/ubuntu1804"
+
+      worker.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+    end
+
+    config.vm.define :winworker do |winworker|
+      winworker.vm.host_name = "winworker"
+      winworker.vm.box = "jborean93/WindowsServer2019"
+
+      winworker.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+
+      winworker.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+      winworker.vm.provision :reload
+    end
+
+    config.vm.define :winworker22 do |winworker22|
+      winworker22.vm.host_name = "winworker22"
+      winworker22.vm.box = "jborean93/WindowsServer2022"
+
+      winworker22.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 4096
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+
+      winworker22.vm.provision :shell, privileged: true, inline: "Install-WindowsFeature -Name Containers"
+      winworker22.vm.provision :reload
+    end
+ 
+    config.vm.define :rancher do |rancher|
+      rancher.vm.host_name = "rancher"
+      rancher.vm.box = "generic/ubuntu1804"
+
+      rancher.vm.provider :libvirt do |libvirt|
+        libvirt.memory = 8192
+        libvirt.cpus = 2
+        libvirt.disk_driver :cache => 'none'
+      end
+
+      rancher.vm.provision :shell, privileged: true, inline: "snap install docker"
+      rancher.vm.provision :shell, privileged: true, inline: "snap install kubectl --classic"
+      rancher.vm.provision :shell, privileged: true, inline: "docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:v2.6.3"
+
+    end
+
+  end
